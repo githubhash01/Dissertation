@@ -30,17 +30,27 @@ def runner():
     print(f"Running experiment: {args.experiment}")
 
     # Choose the step function based on the gradient mode.
+    if args.gradient_mode == "autodiff":
+        step_fn = make_step_fn(exp_config.mjx_model, exp_config.mjx_data)
+        states, jacobians = simulate(
+            mjx_data=exp_config.mjx_data,
+            num_steps=exp_config.config.steps,
+            step_function=step_fn
+        )
     if args.gradient_mode == "fd":
         step_fn = make_step_fn_fd(exp_config.mjx_model, exp_config.mjx_data)
-    else:
-        step_fn = make_step_fn_rev(exp_config.mjx_model, exp_config.mjx_data)
-
-    # Run the simulation.
-    states, jacobians = simulate_scan(
-        mjx_data=exp_config.mjx_data,
-        num_steps=exp_config.config.steps,
-        step_function=step_fn
-    )
+        states, jacobians = simulate(
+            mjx_data=exp_config.mjx_data,
+            num_steps=exp_config.config.steps,
+            step_function=step_fn
+        )
+    elif args.gradient_mode == "implicit":
+        step_fn = make_step_fn(exp_config.mjx_model, exp_config.mjx_data)
+        states, jacobians = simulate_scan(
+            mjx_data=exp_config.mjx_data,
+            num_steps=exp_config.config.steps,
+            step_function=step_fn
+        )
 
     # Generate a timestamp and ensure the stored_data directory exists.
     timestamp = time.strftime("%Y_%m_%d_%H_%M")
