@@ -4,8 +4,8 @@ Main file for doing analysis on the data generated from the experiments
 
 import os
 import numpy as np
-from src.visualiser import visualise_traj_generic
-from src.experiments.one_bounce.config import mj_data, mj_model
+from GradientExperiments.src.visualiser import visualise_traj_generic
+from GradientExperiments.src.experiments.one_bounce.config import mj_data, mj_model
 import pandas as pd
 
 def print_state_jacobian(jacobian_state, mujoco_model):

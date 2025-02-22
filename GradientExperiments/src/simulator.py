@@ -80,6 +80,65 @@ def make_step_fn_dx(model, mjx_data):
 
     return step_fn
 
+# --- Generic Simulation (Should work for all) ---
+def simulate(mjx_data, num_steps, step_function):
+    state = jnp.concatenate([mjx_data.qpos, mjx_data.qvel])
+    states = [state]
+    state_jacobians = []
+
+    # define the backwards jacobian functio
+    #jac_fn = jax.jit(jacfwd(step_function))  # Forward-mode is safer for loopsn
+    jac_fn_rev = jax.jit(jax.jacrev(step_function))
+
+    for _ in range(num_steps):
+        # Compute Jacobian BEFORE stepping (gradient of NEXT state w.r.t. CURRENT state)
+        #J_s = jac_fn(state)
+        J_s = jac_fn_rev(state)
+
+        state_jacobians.append(J_s)
+
+        # Step forward
+        state = step_function(state)
+        states.append(np.array(state))
+
+    states, state_jacobians = np.array(states), np.array(state_jacobians)
+    return states, state_jacobians
+
+
+# -- Trying to Get Reverse to Work -- #
+def simulate_scan(mjx_data, num_steps, step_function):
+    # Combine qpos and qvel into one state vector.
+    init_state = jnp.concatenate([mjx_data.qpos, mjx_data.qvel])
+
+    # This scan function computes one step and its Jacobian.
+    def scan_fn(state, _):
+        # Compute the Jacobian of step_function at this state using reverse mode.
+        jac = jax.jacrev(step_function)(state)
+        next_state = step_function(state)
+        return next_state, (next_state, jac)
+
+    # Use a static loop over num_steps with lax.scan.
+    final_state, (states, jacobians) = jax.lax.scan(scan_fn, init_state, jnp.arange(num_steps))
+    # Optionally prepend the initial state.
+    states = jnp.concatenate([init_state[None, :], states], axis=0)
+    return states, jacobians
+
+# Example step function using jax.jit.
+def make_step_fn_rev(model, mjx_data):
+    @jax.jit
+    def step_fn(state):
+        nq = model.nq
+        qpos, qvel = state[:nq], state[nq:]
+        # Create a new data object with the updated state.
+        dx = mjx_data.replace(qpos=qpos, qvel=qvel)
+        dx_next = mjx.step(model, dx)
+        next_state = jnp.concatenate([dx_next.qpos, dx_next.qvel])
+        return next_state
+    return step_fn
+
+
+# -- Ignore the rest -- #
+
 # --- Simulate the finger ---
 def simulate_finger(mjx_data, num_steps, step_function):
 
@@ -122,31 +181,6 @@ def simulate_pusher(mjx_data, num_steps, step_function):
         states.append(state_next)
 
     return states
-
-# --- Simulate the ball ---
-def simulate(mjx_data, num_steps, step_function):
-    state = jnp.concatenate([mjx_data.qpos, mjx_data.qvel])
-    states = [state]
-    state_jacobians = []
-
-    # define the backwards jacobian functio
-    jac_fn = jax.jit(jacfwd(step_function))  # Forward-mode is safer for loopsn
-    #jac_fn_rev = jax.jit(jax.jacrev(step_function))
-
-    for _ in range(num_steps):
-        # Compute Jacobian BEFORE stepping (gradient of NEXT state w.r.t. CURRENT state)
-        J_s = jac_fn(state)
-        #J_s = jac_fn_rev(state)
-
-        state_jacobians.append(J_s)
-
-        # Step forward
-        state = step_function(state)
-        states.append(np.array(state))
-
-    states, state_jacobians = np.array(states), np.array(state_jacobians)
-    return states, state_jacobians
-
 
 def simulate_(mjx_data, num_steps, step_function):
     # Construct the initial state from the data.
