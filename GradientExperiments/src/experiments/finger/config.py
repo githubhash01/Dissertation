@@ -20,7 +20,7 @@ class Config:
     init_vel: jnp.ndarray = jnp.zeros(3)
 
 # --- Load model and data ---
-xml_path = "/Users/hashim/Desktop/GradientExperiments/src/experiments/finger/finger.xml"
+xml_path = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/finger/finger.xml"
 mj_model = mujoco.MjModel.from_xml_path(filename=xml_path)
 mj_data = mujoco.MjData(mj_model)
 mjx_model = mjx.put_model(mj_model)

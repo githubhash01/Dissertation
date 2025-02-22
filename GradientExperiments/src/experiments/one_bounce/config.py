@@ -23,7 +23,7 @@ class Config:
     customized_kn: float = 1.0 # for soft model of the ball
 
 # --- Load model and data ---
-xml_path = "/Users/hashim/Desktop/GradientExperiments/src/experiments/one_bounce/ball.xml"
+xml_path = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/one_bounce/ball.xml"
 mj_model = mujoco.MjModel.from_xml_path(filename=xml_path)
 mj_data = mujoco.MjData(mj_model)
 mjx_model = mjx.put_model(mj_model)

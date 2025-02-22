@@ -27,7 +27,7 @@ class Config:
     init_vel = jnp.array([2.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     ctrl_input = jnp.array([0.0, 0.0, 0.0])
 
-xml_path = "/Users/hashim/Desktop/GradientExperiments/src/experiments/pusher/pusher.xml"
+xml_path = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/pusher/pusher.xml"
 mj_model = mujoco.MjModel.from_xml_path(filename=xml_path)
 mj_data = mujoco.MjData(mj_model)
 mjx_model = mjx.put_model(mj_model)
