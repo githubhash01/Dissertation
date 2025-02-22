@@ -3,10 +3,12 @@ import importlib
 import os
 import time
 import numpy as np
-from src.simulator import make_step_fn, make_step_fn_fd, simulate
-from src.visualiser import visualise_finger
-from src.analysis import print_state_jacobian
+from GradientExperiments.src.simulator import make_step_fn, make_step_fn_fd, simulate
+from GradientExperiments.src.visualiser import visualise_finger
+from GradientExperiments.src.analysis import print_state_jacobian
 
+# importing the solver for monkey patching
+import mujoco.mjx._src.solver as solver
 
 def runner():
     """Run an experiment using the specified configuration and gradient mode."""
