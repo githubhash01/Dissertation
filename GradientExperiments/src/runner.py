@@ -46,7 +46,7 @@ def runner():
         )
     elif args.gradient_mode == "implicit":
         step_fn = make_step_fn(exp_config.mjx_model, exp_config.mjx_data)
-        states, jacobians = simulate_scan(
+        states, jacobians = simulate(
             mjx_data=exp_config.mjx_data,
             num_steps=exp_config.config.steps,
             step_function=step_fn
