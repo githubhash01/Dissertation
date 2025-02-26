@@ -87,13 +87,13 @@ def simulate(mjx_data, num_steps, step_function):
     state_jacobians = []
 
     # define the backwards jacobian functio
-    jac_fn = jax.jit(jacfwd(step_function))  # Forward-mode is safer for loopsn
-    #jac_fn_rev = jax.jit(jax.jacrev(step_function))
+    #jac_fn = jax.jit(jacfwd(step_function))  # Forward-mode is safer for loopsn
+    jac_fn_rev = jax.jit(jax.jacrev(step_function))
 
     for _ in range(num_steps):
         # Compute Jacobian BEFORE stepping (gradient of NEXT state w.r.t. CURRENT state)
-        J_s = jac_fn(state)
-        #J_s = jac_fn_rev(state)
+        #J_s = jac_fn(state)
+        J_s = jac_fn_rev(state)
 
         state_jacobians.append(J_s)
 

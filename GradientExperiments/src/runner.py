@@ -63,7 +63,7 @@ def runner():
     np.save(os.path.join(exp_config.stored_data_directory, f"jacobians_{gradient_mode}_{timestamp}.npy"), jacobians)
 
     # Print a sample jacobian.
-    print_state_jacobian(jacobian_state=jacobians[4], mujoco_model=exp_config.mj_model)
+    print_state_jacobian(jacobian_state=jacobians[1], mujoco_model=exp_config.mj_model)
 
     # Visualise the trajectory.
     print("Visualising the trajectory ...")

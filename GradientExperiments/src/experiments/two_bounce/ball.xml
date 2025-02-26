@@ -1,5 +1,4 @@
 <mujoco>
-  <option timestep="0.01" gravity="0 0 0" iterations="1" integrator="Euler" />
   <visual>
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
