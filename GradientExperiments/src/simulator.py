@@ -86,7 +86,7 @@ def simulate(mjx_data, num_steps, step_function):
     states = [state]
     state_jacobians = []
 
-    # define the backwards jacobian functio
+    # define the backwards jacobian function
     #jac_fn = jax.jit(jacfwd(step_function))  # Forward-mode is safer for loopsn
     jac_fn_rev = jax.jit(jax.jacrev(step_function))
 

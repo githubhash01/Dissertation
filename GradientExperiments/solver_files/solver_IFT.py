@@ -501,6 +501,8 @@ def _solve_iterations(m: Model, d: Data) -> Data:
 
 # ----- IFT ------
 from jax import custom_vjp
+from typing import Tuple, Optional
+
 def negate_or_zero_float0(grad_leaf, primal_leaf):
   """Returns -grad_leaf unless grad_leaf is float0, in which case returns zeros."""
   if jax.dtypes.result_type(grad_leaf) == jax.dtypes.float0:
@@ -624,11 +626,13 @@ def solve_for_w_factor(R_fn, x_star, x_bar):
   # 2) Solve J.T @ w = x_bar
   # If J is square and invertible, we do a direct solve:
   w_final = lin_solve(J.T, x_bar, assume_a='sym')
-    # J = J + 1e-8 * jp.eye(J.shape[0])
+  J = J + 1e-8 * jp.eye(J.shape[0])
   # w_final = solve_indefinite(J, x_bar)
+  jax.debug.print("J: {}", J)
+  jax.debug.print("w_final: {}", w_final)
   return w_final
 
-def solve_bwd_factorization(res, d_out_bar):
+def solve_bwd_factorization(res, d_out_bar) -> Tuple[Optional[Model], Data]:
   m, d_out = res
   x_star = d_out.qacc
   x_star_bar = d_out_bar.qacc

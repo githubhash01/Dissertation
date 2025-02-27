@@ -32,7 +32,7 @@ mjx_data = mjx.put_data(mj_model, mj_data)
 # --- Initialize state ---
 config = Config()
 mjx_data = mjx_data.replace(
-    qpos=jnp.array([config.init_pos[0], 0.0, config.init_pos[1], 1.0, 0.0, 0.0, 0.0]),
+    qpos=jnp.array([config.init_pos[0], 0.0, config.init_pos[1], 0.1, 0.0, 0.0, 0.0]),
     # p_x, p_y, p_z, quat_w, quat_x, quat_y, quat_z
     qvel=jnp.array([config.init_vel[0], 0.0, config.init_vel[1], 0.0, 0.0, 0.0])  # v_x, v_y, v_z, w_x, w_y, w_z
 )

@@ -1,5 +1,5 @@
 <mujoco>
-  <option timestep="0.01" gravity="0 0 0" iterations="1" integrator="Euler" />
+  <option timestep="0.001" gravity="0 0 0" iterations="1" solver="Newton" integrator="Euler" />
   <visual>
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
@@ -14,9 +14,6 @@
              width="300" height="300" mark="edge" markrgb=".2 .3 .4"/>
     <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
   </asset>
-
-  <!-- Set timestep, use RK4 integrator for higher accuracy, and enable gravity -->
-  <option timestep="0.001" integrator="RK4" solver="Newton"/>
 
   <worldbody>
     <body name="ground" pos="0 0 0">

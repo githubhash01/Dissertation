@@ -520,7 +520,23 @@ Returns:
 # --- Changes to the original mujoco code --- #
 from typing import Tuple, Optional
 from jax import numpy as jnp
+from jax import flatten_util
 
+# Helper to flatten Data struct into vector
+def flatten_data(data: Data):
+    """Flatten only numerical fields from a Data struct."""
+    numeric_data = jax.tree_util.tree_map(
+        lambda x: x if isinstance(x, jnp.ndarray) else None, data
+    )
+    flat_data, unravel_fn = flatten_util.ravel_pytree(numeric_data)
+    return flat_data, unravel_fn
+
+def map_float0_to_zeros(pytree):
+    def fix_float0(x):
+        if jax.dtypes.result_type(x) == jax.dtypes.float0:
+            return jnp.zeros_like(x, dtype=jnp.float32)
+        return x
+    return jax.tree_map(fix_float0, pytree)
 
 # solve iterations is the solve function from the original mujoco code
 def solve_iterations(m: Model, d: Data) -> Data:
@@ -577,7 +593,6 @@ def solve_iterations(m: Model, d: Data) -> Data:
 
     return d
 
-
 # modified solve with custom vjp and implicit function theorem
 @jax.custom_vjp
 def solve(m: Model, dx: Data) -> Data:
@@ -588,87 +603,61 @@ def solve_forward(m: Model, dx: Data) -> tuple[Data, tuple[Model, Data, Data]]:
     residual = (m, dx, dx_next)  # residual values for the backward pass
     return dx_next, residual
 
+def constraint_residual(m: Model, d: Data) -> jnp.array:
+    """Residual function defining constraint violation in MuJoCo."""
+    M_qacc = d.qM @ d.qacc  # Compute M * qacc
+    c_forces = d.qfrc_bias  # Coriolis, centrifugal, and gravitational forces
+    tau_forces = d.qfrc_applied  # External applied forces
+    J = d.efc_J  # Constraint Jacobian
+    grad_s = d.efc_force  # Penalty function gradient
 
-def solve_backward(residual: Tuple[Model, Data, Data], dx_next_bar: Data) -> Tuple[None, Data]:   # TODO - define the output types
+    constraint_residual = M_qacc + c_forces - tau_forces - J.T @ grad_s
+    return constraint_residual
+
+
+def solve_backward(residual: Tuple[Model, Data, Data], dx_next_bar: Data) -> Tuple[None, Data]:
     """
-    Input:
+    Backpropagation using the Implicit Function Theorem.
 
-    residual = (m, dx, dx_next) - tuple of model, previous state, and next state
-    dx_next_bar - gradient of the next state i.e. dL/d(dx_next)
+    Inputs:
+    - residual: (m, dx, dx_next) → Model, previous state, solved state.
+    - dx_next_bar: Gradient of the next state i.e. dL/d(dx_next).
 
-    Goal: Backpropagation
-
-    - find how changes to the model and previous state affect the next state and hence the loss
-    - find dL/dm, dL/d(dx) for the backward pass
-
+    Outputs:
+    - Gradient of loss w.r.t. model parameters and dx.
     """
-    # get the model, previous state, and next state from residual of the forward pass
     model, dx, dx_next = residual
 
-    # Step 1: Calculate static affine point u
-    """
-    u.T = w.T + u.T (df/dx_next) where w.T = dx_next_bar
+    # Convert float0 leaves in dx_next_bar to zeros
+    dx_next_bar = map_float0_to_zeros(dx_next_bar)
 
-    - build a vjp function and use a solver to find u 
-    """
-    _, vjp_dx_next = jax.vjp(lambda model, dx: f(model, dx), model, dx_next)
+    # Flatten dx_next and dx_next_bar
+    dx_next_flat, unravel_dx_next = flatten_data(dx_next)
+    w_flat, _ = flatten_data(dx_next_bar)  # dL/d(dx_next)
 
-    # Step 2: Find u
+    # Compute Jacobian in flat form
+    def residual_flattened(d_flat):
+        d = unravel_dx_next(d_flat)  # Convert back to structured Data
+        return flatten_data(constraint_residual(model, d))[0]  # Ensure numeric output
 
-    # set u to be all zeros
-    u = jnp.zeros_like(dx.qacc)
-    # set u to random values
-    key = jax.random.key(0)
-    # fill u with random numbers
-    u = jax.random.uniform(key, u.shape)
+    J_f = jax.jacobian(residual_flattened)(dx_next_flat)
 
+    # Ensure shapes match before solving (important for debugging)
+    assert J_f.shape[0] <= J_f.shape[1], f"Jacobian is not square: {J_f.shape}"
 
-    # Step 3: Calculate gradients using u and VJP
-    """
+    # Solve least squares system (for non-square J_f)
+    I = jnp.eye(J_f.shape[1])  # Use identity matching the number of columns
+    u_flat = jnp.linalg.lstsq(I - J_f.T @ J_f, w_flat)[0]  # Least squares
 
-    dL/d(m, dx) = u.T df/d(m, dx) 
+    # Compute final gradients using `u_flat`
+    _, vjp_model_dx = jax.vjp(lambda m, d: flatten_data(constraint_residual(m, d))[0], model, dx)
+    u_projected = J_f @ u_flat  # Project to residual space (6-dim)
+    grad_model, grad_dx_flat = vjp_model_dx(u_projected)
 
-    - build a vjp function and just return the gradients
-    """
-    _, vjp_model_dx = jax.vjp(lambda model, dx: f(model, dx), model, dx)
+    # Convert flat grad_dx back to structured Data
+    grad_dx = unravel_dx_next(grad_dx_flat)
 
-    # Step 4: Return the gradients in the correct form
-    """
-
-    m_bar = dL/dm
-    dx_bar = dL/d(dx)
-
-    """
-    model_bar, dx_bar = vjp_dx_next(u)
-
-    return model_bar, dx_bar
-
-
-
-
-def f(m: Model, d: Data):
-    """
-    Objective/Residual function - should be zero for the correct solution
-
-    Input:
-
-    m - model
-    d - data
-
-    Output:
-
-    grad - gradient of the cost function (should be 0 for the correct solution)
-    Idea:
-
-    - create a context object
-    """
-
-    temp_ctx = _Context.create(m, d)
-    temp_ctx = _update_constraint(m, d, temp_ctx)
-    temp_ctx = _update_gradient(m, d, temp_ctx)
-    grad = temp_ctx.grad
-    return grad
-
+    return grad_model, grad_dx
 
 solve.defvjp(solve_forward, solve_backward)  # register the forward and backward functions with the custom vjp
 
