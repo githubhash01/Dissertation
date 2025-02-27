@@ -75,7 +75,7 @@ def runner():
     #print_state_jacobian(jacobian_state=jacobians[500], mujoco_model=exp_config.mj_model)
     # Visualise the trajectory.
     #print("Visualising the trajectory ...")
-    #visualise_finger(states, exp_config.mj_data, exp_config.mj_model)
+    visualise_finger(states, exp_config.mj_data, exp_config.mj_model)
 
 
 if __name__ == "__main__":
