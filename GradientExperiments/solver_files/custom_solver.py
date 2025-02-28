@@ -577,99 +577,95 @@ def original_solve(m: Model, d: Data) -> Data:
 """
 Implicit version of the origin solve function 
 """
-import jax.numpy as jnp
+def implicit_solve(m: Model, d: Data) -> Data:
+    """
+    Solves for qacc using the implicit function theorem-based solver in JAX.
 
+    Parameters:
+        m (Model): MuJoCo model instance.
+        d (Data): MuJoCo data instance.
 
-def make_f(m: Model, d: Data):
+    Returns:
+        Data: Updated MuJoCo data with solved values.
+    """
+
+    # Define the root function (objective function)
     def objective_function(qacc: jax.Array) -> jax.Array:
         """
-    From MuJoCo documentation: M qacc + c - tau + J.T S(J.Tqacc - a_ref) = 0
-    """
-        ctx_f = _Context.create(m, d, grad=False)
-        ctx_f = ctx_f.replace(qacc=qacc)
-        ctx_f = _update_constraint(m, d, ctx_f)
-        ctx_f = _update_gradient(m, d, ctx_f)
+        Computes the gradient of the cost function for the dynamics equation.
 
-        # return the gradient of the cost function
-        return ctx_f.grad
+        M qacc + c - tau + J.T S(J.Tqacc - a_ref) = 0
+        """
+        ctx = _Context.create(m, d, grad=False).replace(qacc=qacc)
+        ctx = _update_constraint(m, d, ctx)
+        ctx = _update_gradient(m, d, ctx)
+        return ctx.grad  # Return gradient as root function
 
-    return objective_function
-
-
-def make_solve_iterative(m: Model, d: Data):
+    # Iterative solver for root finding
     def solve_iterative(f, qacc_guess: jax.Array):
+        """
+        Iteratively solves for qacc using Newton's method with line search.
+        """
 
         def cond(ctx: _Context) -> jax.Array:
             improvement = _rescale(m, ctx.prev_cost - ctx.cost)
-            gradient = _rescale(m, math.norm(ctx.grad))
-
-            done = ctx.solver_niter >= m.opt.iterations
-            done |= improvement < m.opt.tolerance
-            done |= gradient < m.opt.tolerance
-
-            return ~done
+            gradient = _rescale(m, jp.linalg.norm(ctx.grad))
+            return ~(ctx.solver_niter >= m.opt.iterations
+                     | (improvement < m.opt.tolerance)
+                     | (gradient < m.opt.tolerance))
 
         def body(ctx: _Context) -> _Context:
             ctx = _linesearch(m, d, ctx)
             ctx = _update_constraint(m, d, ctx)
             ctx = _update_gradient(m, d, ctx)
+            search = -ctx.Mgrad if m.opt.solver == SolverType.NEWTON else None
+            return ctx.replace(search=search, solver_niter=ctx.solver_niter + 1)
 
-            if m.opt.solver == SolverType.NEWTON:
-                search = -ctx.Mgrad
-            else:
-                raise ValueError("Only NEWTON solver supported")
+        # Initialize the context and solve iteratively
+        ctx_iter = _Context.create(m, d).replace(qacc=qacc_guess)
+        ctx_iter = jax.lax.while_loop(cond, body, ctx_iter) if m.opt.iterations > 1 else body(ctx_iter)
 
-            ctx = ctx.replace(search=search, solver_niter=ctx.solver_niter + 1)
-
-            return ctx
-
-        d.replace(qacc=qacc_guess)  # Replace the qacc with the guess
-        ctx_iter = _Context.create(m, d)  # Create a context object
-
-        # Iterate to find the optimal qacc value
-        if m.opt.iterations == 1:
-            ctx_iter = body(ctx_iter)
-        else:
-            ctx_iter = jax.lax.while_loop(cond, body, ctx_iter)
-
-        # Return qacc_star (to match JAX constraints) + aux values separately
+        # Return qacc_star + auxiliary outputs
         return ctx_iter.qacc, (ctx_iter.qfrc_constraint, ctx_iter.efc_force)
 
-    return solve_iterative
-
-def make_tangent_solver():
+    # Tangent solver for implicit differentiation
     def tangent_solver(g, y):
-        J = jax.jacobian(g)(y)  # evaluate the jacobian of the gradient at the optimal qacc
-        # solve for the tangent
-        return jnp.linalg.solve(J, y)
+        """
+        Solves the linearized system J * x = y for differentiation.
+        """
+        J = jax.jacobian(g)(y)
+        return jp.linalg.solve(J, y)
 
-    return tangent_solver
-
-
-def solve(m: Model, d: Data) -> Data:
-    objective_f = make_f(m, d)
-    solve_iter = make_solve_iterative(m, d)
-    tangent_solver = make_tangent_solver()
+    # Run JAX root solver
+    # warmstart:
     qacc_guess = d.qacc_smooth
+    if not m.opt.disableflags & DisableBit.WARMSTART:
+        warm = _Context.create(m, d.replace(qacc=d.qacc_warmstart), grad=False)
+        smth = _Context.create(m, d.replace(qacc=d.qacc_smooth), grad=False)
+        qacc_guess = jp.where(warm.cost < smth.cost, d.qacc_warmstart, d.qacc_smooth)
+    d = d.replace(qacc=qacc_guess)
 
-    # Run JAX root solver with auxiliary output
-    (qacc_star, aux_values) = jax.lax.custom_root(
-        f=objective_f,
+    qacc_star, (qfrc_constraint, efc_force) = jax.lax.custom_root(
+        f=objective_function,
         initial_guess=qacc_guess,
-        solve=solve_iter,
+        solve=solve_iterative,
         tangent_solve=tangent_solver,
-        has_aux=True  #
+        has_aux=True
     )
 
-    # Unpack additional solved values
-    qfrc_constraint, efc_force = aux_values
-
-    # Update the Data object with extra solved values
-    d = d.replace(
+    # Update the MuJoCo data object with the solved values
+    return d.replace(
         qacc_warmstart=qacc_star,
         qacc=qacc_star,
         qfrc_constraint=qfrc_constraint,
-        efc_force=efc_force,
+        efc_force=efc_force
     )
 
-    return d
+IMPLICIT = True
+
+def solve(m: Model, d: Data) -> Data:
+
+    if IMPLICIT:
+        return implicit_solve(m, d)
+
+    return original_solve(m, d)

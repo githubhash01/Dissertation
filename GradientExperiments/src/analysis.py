@@ -48,16 +48,22 @@ def main():
     print("Running analysis on the data ...")
 
     # Load the data
-    stored_data_directory = "/Users/hashim/Desktop/GradientExperiments/experiments/one_bounce/stored_data"
-    states = np.load(os.path.join(stored_data_directory, 'states_fd.npy'))
-    jacobians = np.load(os.path.join(stored_data_directory, 'jacobians_fd.npy'))
+    stored_data_directory = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/one_bounce/stored_data"
+    #stored_data_directory ="/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/two_bounce/stored_data"
+
+    fd = "jacobians_fd.npy"
+    autodiff = "jacobians_autodiff.npy"
+    implicit = "jacobians_implicit.npy"
+
+    #states = np.load(os.path.join(stored_data_directory, 'states_fd.npy'))
+    jacobians = np.load(os.path.join(stored_data_directory, fd))
 
     # visualise the trajectory using the states data
     print("Visualising the trajectory ...")
-    visualise_traj_generic(states, mj_data, mj_model)
+    #visualise_traj_generic(states, mj_data, mj_model)
 
     # Perform analysis on the data
-    print_state_jacobian(jacobians[500], mj_model)
+    print_state_jacobian(jacobians[600], mj_model)
 
     print("Analysis completed")
 

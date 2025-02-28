@@ -55,24 +55,24 @@ def runner():
         # i need to also modify the solver or use a different solver
 
     # Generate a timestamp and ensure the stored_data directory exists.
-    timestamp = time.strftime("%Y_%m_%d_%H_%M")
+    #timestamp = time.strftime("%Y_%m_%d_%H_%M")
     os.makedirs(exp_config.stored_data_directory, exist_ok=True)
 
     # hardcoding the gradient mode as just using the solverIFT
     gradient_mode = args.gradient_mode
     # Save the states and jacobians.
-    np.save(os.path.join(exp_config.stored_data_directory, f"states_{gradient_mode}_{timestamp}.npy"), states)
-    np.save(os.path.join(exp_config.stored_data_directory, f"jacobians_{gradient_mode}_{timestamp}.npy"), jacobians)
+    np.save(os.path.join(exp_config.stored_data_directory, f"states_{gradient_mode}.npy"), states)
+    np.save(os.path.join(exp_config.stored_data_directory, f"jacobians_{gradient_mode}.npy"), jacobians)
 
     # Print a sample jacobian.
     print("Jacobian @ 1...")
     print_state_jacobian(jacobian_state=jacobians[1], mujoco_model=exp_config.mj_model)
-    print("Jacobian @ 50...")
-    print_state_jacobian(jacobian_state=jacobians[50], mujoco_model=exp_config.mj_model)
+    #print("Jacobian @ 50...")
+    #print_state_jacobian(jacobian_state=jacobians[50], mujoco_model=exp_config.mj_model)
     #print("Jacobian @ 100...")
     #print_state_jacobian(jacobian_state=jacobians[100], mujoco_model=exp_config.mj_model)
-    #print("Jacobian @ 500...")
-    #print_state_jacobian(jacobian_state=jacobians[500], mujoco_model=exp_config.mj_model)
+    print("Jacobian @ 600...")
+    print_state_jacobian(jacobian_state=jacobians[600], mujoco_model=exp_config.mj_model)
     # Visualise the trajectory.
     #print("Visualising the trajectory ...")
     visualise_finger(states, exp_config.mj_data, exp_config.mj_model)

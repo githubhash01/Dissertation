@@ -15,7 +15,7 @@
   </asset>
 
   <!-- Set timestep, use RK4 integrator for higher accuracy, and enable gravity -->
-  <option timestep="0.001" integrator="RK4" solver="Newton"/>
+  <option timestep="0.001" gravity="0 0 0" iterations="1" solver="Newton" integrator="Euler" />
 
   <worldbody>
     <body name="ground" pos="0 0 0">
@@ -29,13 +29,13 @@
 
     <!-- Containing walls -->
     <body name="wall_north" pos="0 2 0.5">
-      <geom type="box" size="2 0.1 0.5" rgba="0 0 0 1"/>
+      <geom type="box" size="2 0.1 0.5" rgba="0 0 0 1" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
     </body>
     <body name="wall_east" pos="2 0 0.5">
-      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1"/>
+      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
     </body>
     <body name="wall_west" pos="-2 0 0.5">
-      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1"/>
+      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
     </body>
   </worldbody>
 </mujoco>

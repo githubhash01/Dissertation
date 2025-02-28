@@ -1,0 +1,25 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "950bd0b99d0c2e396ce8995f17909793614ac2e8ac00e21d6b3cb860c42f5c32"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.9"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "diff-sim": {
+            "editable": true,
+            "file": "MJX"
+        }
+    },
+    "develop": {}
+}

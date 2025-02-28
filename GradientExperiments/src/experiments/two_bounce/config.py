@@ -17,7 +17,7 @@ class Config:
     steps: int = 1000               # Number of simulation steps
     elasticity: float = 1.0         # Coefficient of restitution
     radius: float = 0.1             # Radius of the ball
-    init_pos: jnp.ndarray = jnp.array([1.3, 1.0])  # Initial position of the ball
+    init_pos: jnp.ndarray = jnp.array([0.5, 1.0])  # Initial position of the ball
     init_vel: jnp.ndarray = jnp.array([2.0, -2.0])  # Initial velocity of the ball
     ctrl_input: jnp.ndarray = jnp.array([0.0, 0.0])
 
