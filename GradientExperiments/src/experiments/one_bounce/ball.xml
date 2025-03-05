@@ -1,5 +1,5 @@
 <mujoco>
-  <option timestep="0.001" gravity="0 0 0" iterations="1" solver="Newton" integrator="Euler" />
+  <option timestep="0.002" gravity="0 0 0" iterations="50" solver="Newton" integrator="Euler" />
   <visual>
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
@@ -17,7 +17,12 @@
 
   <worldbody>
     <body name="ground" pos="0 0 0">
-      <geom type="plane" size="2 2 0.1" material="grid" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
+      <geom type="plane" size="2 2 0.1" material="grid"
+          friction="0 0 0"
+          condim="1"
+          solref="-20000 -10"
+          solimp="0.9999 0.9999 0.00005 0.5 2">
+      </geom>
     </body>
 
     <body name="ball" pos="-1 0 1">
