@@ -63,7 +63,7 @@ def main():
     #visualise_traj_generic(states, mj_data, mj_model)
 
     # Perform analysis on the data
-    print_state_jacobian(jacobians[600], mj_model)
+    print_state_jacobian(jacobians[300], mj_model)
 
     print("Analysis completed")
 

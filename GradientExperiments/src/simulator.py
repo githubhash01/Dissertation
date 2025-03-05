@@ -25,7 +25,6 @@ def make_step_fn(model, mjx_data):
 # --- Finite Differences ---
 def make_step_fn_fd(mjx_model, mjx_data):
     epsilon = 1e-5
-
     # This function performs the actual step computation.
     @jax.jit
     def _step_fn(state):
@@ -49,6 +48,7 @@ def make_step_fn_fd(mjx_model, mjx_data):
     # Backward pass: given the saved s and the incoming cotangent,
     # compute the vector-Jacobian product using finite differences.
     def step_fn_bwd(s, cotangent):
+        jax.debug.print("Using finite differences for VJP")
         f_s = _step_fn(s)  # compute baseline output once
         grad = []
         for j in range(s.shape[0]):
