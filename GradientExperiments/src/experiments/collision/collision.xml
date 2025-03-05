@@ -1,6 +1,6 @@
 <mujoco model="cart">
     <option timestep="0.001" iterations="1" solver="Newton" integrator="Euler">
-        <flag contact="enable"/>
+        <flag contact="disable"/>
     </option>
 
     <visual>

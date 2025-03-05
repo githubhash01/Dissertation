@@ -13,19 +13,24 @@ stored_data_directory = os.path.join(BASE_DIR, "stored_data")
 # --- Configuration ---
 @dataclass
 class Config:
-    simulation_time: float = 10.0
-    steps: int = 1000
+    simulation_time: float = 10.0  # Total simulation time (s)
+    steps: int = 1000  # Number of time steps
 
-    # create init pos of length 11
+    # Initial position (11 DoF: base + orientation + arm joints)
     init_pos = jnp.array([
-        0,  # base x
-        0,  # base y
-        0,  # base z
-        1.0, 0.0, 0.0, 0.0,  # base orientation as quaternion (w,x,y,z)
-        1.0, 1.0, 1.0, 1.0  # arm joint angles (4 values)
+        -1.0, 0.0, 0.0,  # Base position (x, y, z)
+        1.0, 0.0, 0.0, 0.0,  # Base quaternion (w, x, y, z)
+        0.0, 0.0, 0.0, 0.0  # Joint angles (4)
     ])
-    init_vel = jnp.array([2.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    ctrl_input = jnp.array([0.0, 0.0, 0.0])
+
+    # Initial velocity (corresponding to 11 DoF)
+    init_vel = jnp.array([
+        1.0, 1.0, 1.0,  # Base linear velocity (x, y, z)
+        0.0, 0.0, 0.0,  # Base angular velocity (x, y, z)
+        0.0, 0.0, 0.0, 0.0, 0.0 # Joint velocities (4)
+    ])
+    # Control input (torques for 7 actuated joints)
+    ctrl_input = jnp.zeros(7)
 
 xml_path = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/pusher/pusher.xml"
 mj_model = mujoco.MjModel.from_xml_path(filename=xml_path)
@@ -40,6 +45,4 @@ config = Config()
 mjx_data = mjx_data.replace(
     qpos=config.init_pos,
     qvel=config.init_vel
-    # in this case the qvel is also nv dimensional (derivatives of qpos)
-    #qvel=jnp.array([config.init_vel[0], config.init_vel[1], config.init_vel[2], 0.0, 0.0, 0.0, 0.0])
 )

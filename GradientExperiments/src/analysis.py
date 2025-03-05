@@ -79,76 +79,144 @@ def build_ground_truth_jacobian(dt):
     return J_gt
 
 
-def plot_jacobian_difference_across_time(
-        jacobians,
-        ground_truth,
-        boundaries,  # tuple like (start_collision, end_collision)
-        title="Jacobian difference across time"
-):
+def build_ground_truth_states(T, collision_step):
     """
-    Plots the Jacobian difference in three separate subplots:
-    - Pre-collision
-    - Collision
-    - Post-collision
+    Constructs the expected state trajectory with interpolation before and after collision.
 
     Parameters:
-    - jacobians: (T, nq+nv, nq+nv) array of computed Jacobians at each time step.
-    - ground_truth: (nq+nv, nq+nv) analytical/expected Jacobian.
-    - boundaries: (start_collision, end_collision) defining when collision occurs.
-    - title: Overall title for the figure.
+    - T: Total number of time steps
+    - collision_step: Time step at which collision occurs
+
+    Returns:
+    - states_gt: (T, 13) array where each row is [qpos (7), qvel (6)]
     """
 
+    # Initial state (before collision)
+    init_state = np.array([-1, 0, 1, 1, 0, 0, 0, 2, 0, -2, 0, 0, 0])
+
+    # Final state (after full trajectory ends)
+    final_state = np.array([1, 0, 1, 1, 0, 0, 0, 2, 0, 2, 0, 0, 0])  # v_z flipped
+
+    # Split into pre-collision and post-collision trajectories
+    pre_collision = np.linspace(init_state, final_state, collision_step)  # Up to collision
+    post_collision = np.linspace(init_state, final_state, T - collision_step)  # After collision
+
+    # Flip velocity in z-direction at collision step
+    pre_collision[-1, 9] = -pre_collision[-1, 9]  # Flip v_z at collision
+    post_collision[:, 9] = np.abs(post_collision[:, 9])  # Ensure positive v_z
+
+    # Combine full trajectory
+    states_gt = np.vstack([pre_collision, post_collision])
+
+    return states_gt
+
+
+def plot_jacobian_difference_across_time(jacobians, ground_truth, boundaries, title="Jacobian difference across time"):
+    """
+    Plots the Jacobian difference for pre-collision, collision, and post-collision
+    on a SINGLE graph with different colors.
+
+    Parameters:
+    - jacobians: list (or array) of shape (T, (nq+nv), (nq+nv))
+    - ground_truth: array of shape ((nq+nv), (nq+nv)), analytical Jacobian
+    - boundaries: tuple (start_collision, end_collision)
+    - title: Plot title
+    """
+
+    # Convert jacobians to NumPy array
     jacobians = np.array(jacobians)
     T = jacobians.shape[0]
     time_steps = np.arange(T)
 
     # Compute Frobenius norm error at each time step
-    errors = np.linalg.norm(jacobians - ground_truth, ord='fro', axis=(1, 2))
+    errors = np.linalg.norm(jacobians - ground_truth, ord='fro', axis=(1,2))
 
     # Unpack boundaries
     start_collision, end_collision = boundaries
 
-    # Split data into three phases
+    # Split time steps into three phases
     pre_mask = time_steps < start_collision
     col_mask = (time_steps >= start_collision) & (time_steps < end_collision)
     post_mask = time_steps >= end_collision
 
-    # Set consistent y-limits (optional)
+    # Set overall y-limits
     y_min, y_max = np.min(errors), np.max(errors)
 
-    # Create figure and 3 subplots
-    fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
+    # Create figure
+    plt.figure(figsize=(10,6))
 
-    # Plot Pre-Collision
-    axs[0].plot(time_steps[pre_mask], errors[pre_mask], 'bo-')
-    axs[0].set_title("Pre-Collision")
-    axs[0].set_ylabel("Jacobian Difference (Fro. norm)")
-    axs[0].grid(True)
-    axs[0].set_ylim(y_min, 5)
+    # Plot all three phases on the same plot
+    plt.plot(time_steps[pre_mask],  errors[pre_mask],  'bo-', label="Pre-Collision")
+    plt.plot(time_steps[col_mask],  errors[col_mask],  'ro-', label="Collision")
+    plt.plot(time_steps[post_mask], errors[post_mask], 'go-', label="Post-Collision")
 
-    # Plot Collision
-    axs[1].plot(time_steps[col_mask], errors[col_mask], 'ro-')
-    axs[1].set_title("During Collision")
-    axs[1].set_ylabel("Jacobian Difference (Fro. norm)")
-    axs[1].grid(True)
-    axs[1].set_ylim(y_min, y_max)
+    # Labels & Titles
+    plt.xlabel("Time Step")
+    plt.ylabel("Jacobian Difference (Frobenius Norm)")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
 
-    # Plot Post-Collision
-    axs[2].plot(time_steps[post_mask], errors[post_mask], 'go-')
-    axs[2].set_title("Post-Collision")
-    axs[2].set_xlabel("Time Step")
-    axs[2].set_ylabel("Jacobian Difference (Fro. norm)")
-    axs[2].grid(True)
-    axs[2].set_ylim(y_min, 5)
+    # Optional: Adjust y-limits for better visibility
+    plt.ylim(y_min, y_max if y_max < 3 else 3)  # Clip max to 3 if large
 
-    # Set the overall figure title
-    plt.suptitle(title)
     plt.show()
 
     # Print max error stats for debugging
     print(f"Max error pre-collision:  {np.max(errors[pre_mask]):.6e}")
     print(f"Max error during collision:  {np.max(errors[col_mask]):.6e}")
     print(f"Max error post-collision: {np.max(errors[post_mask]):.6e}")
+
+def plot_state_difference_across_time(states, states_gt, collision_step, title="State difference across time"):
+    """
+    Plots actual vs expected state values (position & velocity) over time.
+
+    Parameters:
+    - states: (T, 13) array where each row is [qpos (7), qvel (6)]
+    - states_gt: (T, 13) array of expected [qpos, qvel] at each step
+    - collision_step: int, time step where collision is expected to occur
+    - title: title of the plot
+
+    The first 7 elements represent position (qpos),
+    The next 6 elements represent velocity (qvel).
+    """
+
+    states = np.array(states)
+    states_gt = np.array(states_gt)
+    time_steps = np.arange(len(states))
+
+    # Extract position and velocity separately
+    qpos_actual, qvel_actual = states[:, :7], states[:, 7:]
+    qpos_gt, qvel_gt = states_gt[:, :7], states_gt[:, 7:]
+
+    # Create figure with 2 subplots (qpos & qvel)
+    fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+    # Position (qpos) plot
+    for i in range(7):
+        axs[0].plot(time_steps, qpos_actual[:, i], label=f"qpos {i} (actual)", linestyle='solid')
+        axs[0].plot(time_steps, qpos_gt[:, i], label=f"qpos {i} (expected)", linestyle='dashed')
+
+    axs[0].axvline(x=collision_step, color='r', linestyle='dotted', label="Collision")
+    axs[0].set_ylabel("Position (qpos)")
+    axs[0].legend()
+    axs[0].grid(True)
+    axs[0].set_title("Position Evolution Over Time")
+
+    # Velocity (qvel) plot
+    for i in range(6):
+        axs[1].plot(time_steps, qvel_actual[:, i], label=f"qvel {i} (actual)", linestyle='solid')
+        axs[1].plot(time_steps, qvel_gt[:, i], label=f"qvel {i} (expected)", linestyle='dashed')
+
+    axs[1].axvline(x=collision_step, color='r', linestyle='dotted', label="Collision")
+    axs[1].set_ylabel("Velocity (qvel)")
+    axs[1].set_xlabel("Time Step")
+    axs[1].legend()
+    axs[1].grid(True)
+    axs[1].set_title("Velocity Evolution Over Time")
+
+    plt.suptitle(title)
+    plt.show()
 
 
 def main():
@@ -159,12 +227,17 @@ def main():
     stored_data_directory = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/one_bounce/stored_data"
     #stored_data_directory ="/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/two_bounce/stored_data"
 
-    fd = "jacobians_fd.npy"
-    autodiff = "jacobians_autodiff.npy"
-    implicit = "jacobians_implicit.npy"
+    fd_states = "states_fd.npy"
+    fd_jacobians = "jacobians_fd.npy"
 
-    #states = np.load(os.path.join(stored_data_directory, 'states_fd.npy'))
-    jacobians = np.load(os.path.join(stored_data_directory, fd))
+    autodiff_states = "states_autodiff.npy"
+    autodiff_jacobians = "jacobians_autodiff.npy"
+
+    implicit_states = "states_implicit.npy"
+    implicit_jacobians = "jacobians_implicit.npy"
+
+    states = np.load(os.path.join(stored_data_directory, fd_states))
+    jacobians = np.load(os.path.join(stored_data_directory, fd_jacobians))
 
     # visualise the trajectory using the states data
     print("Visualising the trajectory ...")
@@ -176,8 +249,12 @@ def main():
     # Build up the ground truth Jacobian
     J_gt = build_ground_truth_jacobian(dt=0.01)
     # use the ground truth jacobian to plot the difference between the jacobians
-    plot_jacobian_difference_across_time(jacobians, J_gt, boundaries=[450, 550], title="Jacobian difference across time")
+    #plot_jacobian_difference_across_time(jacobians, J_gt, boundaries=[400, 600], title="Jacobian difference across time")
 
+    # Build up the ground truth states
+    states_gt = build_ground_truth_states(T=1000, collision_step=500)
+    # use the ground truth states to plot the difference between the states
+    plot_state_difference_across_time(states, states_gt, collision_step=500, title="State difference across time")
 
     print("Analysis completed")
 

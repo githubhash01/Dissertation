@@ -35,10 +35,8 @@ mjx_data = mjx.put_data(mj_model, mj_data)
 # --- Initialize state ---
 config = Config()
 mjx_data = mjx_data.replace(
-    # qpos for the two slide joints
-    qpos=jnp.array([0, 0.5]),
-    # qvel for the two slide joints
-    qvel=jnp.array([1.0, 1.0])
+    qpos=config.init_pos,
+    qvel=config.init_vel
 )
 
 # Now mjx_data has both blocks set up so that block 1 will move toward block 2.

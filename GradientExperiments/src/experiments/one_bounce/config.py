@@ -14,7 +14,7 @@ stored_data_directory = os.path.join(BASE_DIR, "stored_data")
 @dataclass
 class Config:
     simulation_time: float = 1.0    # Duration of simulation
-    steps: int = 500               # Number of simulation steps
+    steps: int = 1000               # Number of simulation steps
     init_pos: jnp.ndarray = jnp.array([-1.0, 1.0])  # Initial position of the ball
     init_vel: jnp.ndarray = jnp.array([2.0, -2.0])  # Initial velocity of the ball
     ctrl_input: jnp.ndarray = jnp.array([0.0, 0.0])

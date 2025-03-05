@@ -19,23 +19,31 @@
 
   <worldbody>
     <body name="ground" pos="0 0 0">
-      <geom type="plane" size="2 2 0.1" material="grid" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
+      <geom type="plane" size="2 2 0.1" material="grid"
+          friction="0 0 0"
+          condim="1"
+          solref="0.002 0"
+          solimp="0.9999 0.9999 0.00005 0.5 2">
+      </geom>
     </body>
-
-    <body name="ball" pos="-1 0 1">
+    <body name="ball" pos="-0.5 0 1">
       <joint type="free"/>
       <geom type="sphere" size="0.1" mass="0.1" rgba="1 0 0 1"/>
     </body>
 
     <!-- Containing walls -->
     <body name="wall_north" pos="0 2 0.5">
-      <geom type="box" size="2 0.1 0.5" rgba="0 0 0 1" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
+      <geom type="box" size="2 0.1 0.5" rgba="0 0 0 1" friction="0 0 0"
+          condim="1"/>
     </body>
     <body name="wall_east" pos="2 0 0.5">
-      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
+      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1" friction="0 0 0"
+          solref="0.002 0"
+          solimp="0.9999 0.9999 0.00005 0.5 2"/>
     </body>
     <body name="wall_west" pos="-2 0 0.5">
-      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1" solref="0.002 0" solimp="0.99 0.99 0.001 0.0001 10"/>
+      <geom type="box" size="0.1 2 0.5" rgba="0.2 0.2 0.2 1" friction="0 0 0"
+          condim="1"/>
     </body>
   </worldbody>
 </mujoco>

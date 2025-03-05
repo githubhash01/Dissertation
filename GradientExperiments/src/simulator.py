@@ -48,7 +48,7 @@ def make_step_fn_fd(mjx_model, mjx_data):
     # Backward pass: given the saved s and the incoming cotangent,
     # compute the vector-Jacobian product using finite differences.
     def step_fn_bwd(s, cotangent):
-        jax.debug.print("Using finite differences for VJP")
+        #jax.debug.print("Using finite differences for VJP")
         f_s = _step_fn(s)  # compute baseline output once
         grad = []
         for j in range(s.shape[0]):
