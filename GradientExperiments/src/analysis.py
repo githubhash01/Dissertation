@@ -224,7 +224,7 @@ def main():
     print("Running analysis on the data ...")
 
     # Load the data
-    stored_data_directory = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/one_bounce/stored_data"
+    stored_data_directory = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/collision/stored_data"
     #stored_data_directory ="/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/two_bounce/stored_data"
 
     fd_states = "states_fd.npy"
@@ -236,8 +236,8 @@ def main():
     implicit_states = "states_implicit.npy"
     implicit_jacobians = "jacobians_implicit.npy"
 
-    states = np.load(os.path.join(stored_data_directory, fd_states))
-    jacobians = np.load(os.path.join(stored_data_directory, fd_jacobians))
+    states = np.load(os.path.join(stored_data_directory, implicit_states))
+    jacobians = np.load(os.path.join(stored_data_directory, implicit_jacobians))
 
     # visualise the trajectory using the states data
     print("Visualising the trajectory ...")
@@ -249,12 +249,12 @@ def main():
     # Build up the ground truth Jacobian
     J_gt = build_ground_truth_jacobian(dt=0.01)
     # use the ground truth jacobian to plot the difference between the jacobians
-    #plot_jacobian_difference_across_time(jacobians, J_gt, boundaries=[400, 600], title="Jacobian difference across time")
+    plot_jacobian_difference_across_time(jacobians, J_gt, boundaries=[400, 600], title="Jacobian difference across time")
 
     # Build up the ground truth states
     states_gt = build_ground_truth_states(T=1000, collision_step=500)
     # use the ground truth states to plot the difference between the states
-    plot_state_difference_across_time(states, states_gt, collision_step=500, title="State difference across time")
+    #plot_state_difference_across_time(states, states_gt, collision_step=500, title="State difference across time")
 
     print("Analysis completed")
 

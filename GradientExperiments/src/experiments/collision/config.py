@@ -23,7 +23,9 @@ class Config:
     init_pos: jnp.ndarray = jnp.array([0.0, 1.0])
     # init_vel[0] = cart1_velocity, init_vel[1] = cart2_velocity
     init_vel: jnp.ndarray = jnp.array([1.0, 0.0])
-    ctrl_input: jnp.ndarray = jnp.array([0.0, 0.0])
+    #ctrl_input: jnp.ndarray = jnp.array([0.0, 0.0])
+    #init_pos = jnp.array([0.])
+    #init_vel = jnp.array([1])
 
 # --- Load model and data ---
 xml_path = "/Users/hashim/Desktop/Dissertation/GradientExperiments/src/experiments/collision/two_cart.xml"

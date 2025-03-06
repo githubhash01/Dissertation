@@ -64,18 +64,12 @@ def runner():
     np.save(os.path.join(exp_config.stored_data_directory, f"states_{gradient_mode}.npy"), states)
     np.save(os.path.join(exp_config.stored_data_directory, f"jacobians_{gradient_mode}.npy"), jacobians)
 
+    jacobians = np.load(os.path.join(exp_config.stored_data_directory, f"jacobians_{gradient_mode}.npy"))
+
     # Print a sample jacobian.
-    print("Jacobian @ 1...")
-    print_state_jacobian(jacobian_state=jacobians[1], mujoco_model=exp_config.mj_model)
-    #print("Jacobian @ 50...")
-    #print_state_jacobian(jacobian_state=jacobians[50], mujoco_model=exp_config.mj_model)
-    #print("Jacobian @ 100...")
-    #print_state_jacobian(jacobian_state=jacobians[100], mujoco_model=exp_config.mj_model)
-    print("Jacobian @ 600...")
-    print_state_jacobian(jacobian_state=jacobians[600], mujoco_model=exp_config.mj_model)
-    # print the final state vector
-    print("Final State Vector")
-    print(states[-1])
+
+    #for j in jacobians:
+        #print_state_jacobian(jacobian_state=j, mujoco_model=exp_config.mj_model)
 
     # Visualise the trajectory.
     #print("Visualising the trajectory ...")

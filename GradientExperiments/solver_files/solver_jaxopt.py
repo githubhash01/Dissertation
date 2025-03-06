@@ -578,6 +578,7 @@ def original_solve(m: Model, d: Data) -> Data:
 Implicit version of the origin solve function 
 """
 from jaxopt import implicit_diff
+import jax.scipy.linalg as jsp
 
 # jaxopt IFT solve #
 def implicit_solve(m: Model, d: Data) -> Data:
